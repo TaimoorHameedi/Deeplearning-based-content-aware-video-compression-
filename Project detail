@@ -1,0 +1,91 @@
+# CAVC Project: Detailed Architectural & Technical Walkthrough
+
+This document provides a comprehensive analysis of the **Content-Aware Video Compression (CAVC)** project. It covers the system topology, implementation details, and the underlying logic that drives its efficiency in video compression.
+
+## 1. Project Topology & Architecture
+
+The project follows a modular architecture designed for research validation of ROI-based video compression. The flow is as follows:
+
+```mermaid
+graph TD
+    A[Input Video] --> B[run_cavc_pipeline.py]
+    B --> C[CAVCBridge]
+    C --> D[CAVCPipeline]
+    
+    subgraph "CAVC Core Stages"
+        D --> E[S0: ROI Detection - YOLO]
+        E --> F[S1: Mask Generation]
+        F --> G[S2: Stream Separation]
+        G --> H[S3: Dual CRF Encoding]
+    end
+    
+    H --> I[ROI Stream .mp4]
+    H --> J[NROI Stream .mp4]
+    
+    I & J --> K[Stream Merger]
+    K --> L[Reconstructed Video]
+    
+    L --> M[Metrics Tracker]
+    M --> N[PSNR/SSIM Graphs]
+    M --> O[CSV Quality Report]
+```
+
+## 2. Detailed Module Breakdown
+
+### [run_cavc_pipeline.py](file:///c:/Users/SYSLAB/Downloads/Tamoor/Tamoor/run_cavc_pipeline.py)
+The primary entry point. It handles user configurations such as:
+- **Resolution**: Resizing for processing efficiency (e.g., 1280x720).
+- **CRF Values**: 
+  - `ROI_CRF` (e.g., 25): High quality for detected objects.
+  - `NROI_CRF` (e.g., 40): Aggressive compression for backgrounds.
+- **FPS Control**: Support for downsampling to reduce bitrate further.
+
+### [cavc_bridge.py](file:///c:/Users/SYSLAB/Downloads/Tamoor/Tamoor/cavc_bridge.py)
+A wrapper class that simplifies the interaction between the research scripts and the complex CAVC internals. It:
+- Auto-detects project roots and YOLO weights.
+- Handles environment setup (Python paths).
+- Orchestrates the Stage 1 (Compression) and Stage 2 (Quality Analysis) workflows.
+
+### [cavc/pipeline.py](file:///c:/Users/SYSLAB/Downloads/Tamoor/Tamoor/Taimoor%20folder/cavc/pipeline.py)
+The industrial core of the project. It implements the four-stage cycle:
+1.  **S0 (Detection)**: Uses YOLOv8 to identify objects of interest (e.g., people, cars).
+2.  **S1 (Masking)**: Converts bounding boxes into smooth, refined masks using the [ROIMaskGenerator](file:///c:/Users/SYSLAB/Downloads/Tamoor/Tamoor/Taimoor%20folder/cavc/mask_generator.py#4-57).
+3.  **S2 (Separation)**: Splits each frame into two distinct streams based on the mask.
+4.  **S3 (Encoding)**: Uses FFmpeg to encode the two streams separately with different compression levels.
+
+### [cavc/mask_generator.py](file:///c:/Users/SYSLAB/Downloads/Tamoor/Tamoor/Taimoor%20folder/cavc/mask_generator.py)
+Implements morphological operations (Erosion, Dilation) and Temporal Smoothing (EMA) to ensure the ROI masks are stable and don't flicker between frames.
+
+### [cavc/metrics.py](file:///c:/Users/SYSLAB/Downloads/Tamoor/Tamoor/Taimoor%20folder/cavc/metrics.py)
+The validation engine. It calculates:
+- **PSNR**: Peak Signal-to-Noise Ratio (separately for ROI, NROI, and Overall).
+- **SSIM**: Structural Similarity Index.
+- **Visualizations**: Generates the comparison graphs, heatmaps, and artifact maps.
+
+## 3. How the Project Runs
+
+1.  **Initialization**: The script finds the video and loads the YOLO model.
+2.  **Per-Frame Processing**: 
+    - The frame is detected for ROIs.
+    - A mask is generated.
+    - The frame is separated into ROI (foreground) and NROI (background).
+    - These individual frames are saved to a temporary directory.
+3.  **Stream Encoding**: FFmpeg combines the saved frames into two [.mp4](file:///c:/Users/SYSLAB/Downloads/Tamoor/Tamoor/VIDEO_FOR_TESTING.mp4) files: `roi_stream.mp4` and `nroi_stream.mp4`.
+4.  **Reconstruction**: The two streams are read back and merged in real-time using the mask to create the final `cavc_compressed.mp4`.
+5.  **Analysis**: The compressed video is compared frame-by-frame with the original to calculate quality drops and bitrate savings.
+
+## 4. Visual Quality Analysis
+
+The following visualizations are generated at the end of the pipeline to validate the results:
+
+````carousel
+![PSNR Comparison Graph](file:///C:/Users/SYSLAB/.gemini/antigravity/brain/748457f0-8467-44f1-8e94-385c7298b531/psnr_graph.png)
+<!-- slide -->
+![SSIM Quality Heatmap](file:///C:/Users/SYSLAB/.gemini/antigravity/brain/748457f0-8467-44f1-8e94-385c7298b531/ssim_heatmap.png)
+<!-- slide -->
+![Artifact/Error Map](file:///C:/Users/SYSLAB/.gemini/antigravity/brain/748457f0-8467-44f1-8e94-385c7298b531/artifact_map.png)
+````
+
+- **PSNR Graph**: Shows how quality fluctuates across the video timeline.
+- **SSIM Heatmap**: Darker areas indicate where quality loss is most structural.
+- **Artifact Map**: Highlights the exact differences (errors) introduced by the compression.

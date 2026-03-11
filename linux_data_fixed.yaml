@@ -1,0 +1,6 @@
+names:
+- person
+nc: 1
+path: /home/FASTLAB2/Tamoor/yolo_dataset
+train: images/train
+val: images/val

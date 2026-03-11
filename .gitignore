@@ -1,0 +1,40 @@
+# Environment and caches
+__pycache__/
+*.py[cod]
+*$py.class
+.env
+.venv
+env/
+venv/
+ENV/
+
+# Jupyter Notebooks
+.ipynb_checkpoints
+
+# IDEs and Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Project specific
+temp_cavc/
+temp_video_process/
+visualizations/
+
+# Media and Weights
+*.mp4
+*.avi
+*.mkv
+*.pt
+*.pth
+*.weights
+
+# Logs and Reports
+*.csv
+runs/
+cavc_quality_report*.csv
+
+# OS generated files
+.DS_Store
+Thumbs.db
