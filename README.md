@@ -78,8 +78,8 @@ Before you begin, ensure you have the following installed on your system:
 
 1. **Clone the repository:**
    ```bash
-   git clone https://github.com/yourusername/CAVC.git
-   cd CAVC
+   git clone https://github.com/TaimoorHameedi/Deeplearning-based-content-aware-video-compression-.git
+   cd Deeplearning-based-content-aware-video-compression-
    ```
 
 2. **Install Python dependencies:**
